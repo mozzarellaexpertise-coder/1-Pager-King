@@ -4,32 +4,37 @@ import { supabaseAdmin } from '$lib/server/supabaseAdmin';
 
 export async function POST({ request }) {
   try {
-    // Get the request body (expects { token, title, body })
     const { token, title, body } = await request.json();
 
     if (!token || !title || !body) {
       return json({ error: 'Missing token, title, or body' }, { status: 400 });
     }
 
-    // Send push notification via Firebase
+    // 1. Prepare the message for ONE device
     const message = {
-      token,
-      notification: {
-        title,
-        body
-      }
+      token: token,
+      notification: { title, body }
     };
 
-    await firebaseAdmin.messaging().send(message);
+    // 2. Send via Firebase
+    const response = await firebaseAdmin.messaging().send(message);
+    console.log('Successfully sent message:', response);
 
-    // Optional: log notification in Supabase
-    await supabaseAdmin
-      .from('notifications')
-      .insert([{ token, title, body, created_at: new Date().toISOString() }]);
+    // 3. Optional: Log to Supabase (Wrapped in try/catch so it doesn't kill the response)
+    try {
+      await supabaseAdmin
+        .from('notifications') 
+        .insert([{ token, title, body }]);
+    } catch (dbErr) {
+      console.warn('Supabase logging failed, but notification was sent:', dbErr);
+    }
 
-    return json({ success: true });
-  } catch (err) {
-    console.error('Error sending notification:', err);
-    return json({ error: 'Failed to send notification' }, { status: 500 });
+    return json({ success: true, messageId: response });
+  } catch (err: any) {
+    console.error('FCM Error:', err);
+    return json({ 
+      success: false, 
+      error: err.message || 'Failed to send notification' 
+    }, { status: 500 });
   }
 }
