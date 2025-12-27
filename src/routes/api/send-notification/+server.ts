@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { firebaseAdmin } from '$lib/server/firebaseAdmin';
+import firebaseAdmin from '$lib/server/firebaseAdmin';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
 
 export async function POST({ request }) {
