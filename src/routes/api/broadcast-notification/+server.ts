@@ -5,24 +5,25 @@ import { supabaseAdmin } from '$lib/server/supabaseAdmin';
 export async function POST({ request }) {
   try {
     const { title, body } = await request.json();
-    if (!title || !body) {
-      return json({ error: 'Missing title or body' }, { status: 400 });
-    }
 
+    // 1. Fetch the correct column name from Supabase
     const { data: devices, error } = await supabaseAdmin
       .from('devices')
-      .select('token');
+      .select('fcm_token'); // Match your registration field name
 
-    if (error) return json({ error: 'Failed to fetch devices' }, { status: 500 });
-    if (!devices || devices.length === 0) return json({ message: 'No devices registered' });
+    if (error) return json({ error: 'DB Fetch Failed' }, { status: 500 });
+    
+    // 2. Safety check: Don't call Firebase if no tokens exist
+    const tokens = devices?.map(d => d.fcm_token).filter(t => !!t) || [];
+    if (tokens.length === 0) {
+      return json({ success: false, message: 'No devices found' }, { status: 200 });
+    }
 
-    const tokens = devices.map(d => d.token);
+    const messaging = firebaseAdmin.messaging();
 
-    // ✅ TS workaround: cast messaging to any
-    const messaging = firebaseAdmin.messaging() as any;
-
-    const response = await messaging.sendMulticast({
-      tokens,
+    // 3. Use the NEW 2025 Method: sendEachForMulticast
+    const response = await messaging.sendEachForMulticast({
+      tokens: tokens,
       notification: { title, body },
     });
 
@@ -31,8 +32,8 @@ export async function POST({ request }) {
       sent: response.successCount,
       failed: response.failureCount,
     });
-  } catch (err) {
-    console.error('Error sending broadcast:', err);
-    return json({ error: 'Failed to send broadcast notification' }, { status: 500 });
+  } catch (err: any) {
+    console.error('FCM Error:', err);
+    return json({ error: err.message }, { status: 500 });
   }
 }
