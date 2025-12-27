@@ -18,8 +18,10 @@ export async function POST({ request }) {
 
     const tokens = devices.map(d => d.token);
 
-    // ✅ Use as-is; TS knows sendMulticast exists on Messaging
-    const response = await firebaseAdmin.messaging().sendMulticast({
+    // ✅ TS workaround: cast messaging to any
+    const messaging = firebaseAdmin.messaging() as any;
+
+    const response = await messaging.sendMulticast({
       tokens,
       notification: { title, body },
     });
