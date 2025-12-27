@@ -11,4 +11,4 @@ if (!admin.apps.length) {
   });
 }
 
-export { admin as firebaseAdmin };
+export const firebaseAdmin = admin;
