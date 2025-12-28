@@ -12,7 +12,7 @@ export const load: PageServerLoad = async () => {
   const { data: profiles, error } = await supabase
     .from('profiles')
     .select('id, display_name')
-    .order('display_name', { ascending: true });
+    .order('display_name', { ascending: false });
 
   if (error) {
     console.error('Error fetching profiles:', error.message);
