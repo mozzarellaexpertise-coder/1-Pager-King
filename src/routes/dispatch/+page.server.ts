@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // No need for 'createServerClient' or 'ssr' package here
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export const actions = {
     default: async ({ request }) => {
